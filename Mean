@@ -1,0 +1,61 @@
+ #install.packages('rjson')
+library("jsonlite")
+library(nycflights13)
+library(dplyr)
+library(curl)
+
+#stream_out(flights, con = file("~/flights.json"))
+#flights2 <- stream_in(file("~/flights.json"))
+#all.equal(flights2, as.data.frame(flights))
+index<-0
+ln<-0
+
+chunksize <- 1000
+output <- file("out.json", open = "wb")
+output2<-file("out2.json", open = "wb")
+output3<-file("out3.json", open = "wb")
+
+dataFile <-stream_in(file("~/reviews_Amazon_Instant_Video.json"),handler = function(df){
+
+  df<-subset(na.omit(df),select=-c(reviewText,reviewTime,reviewerID,reviewerName,summary,unixReviewTime))
+  stream_out(df, output, verbose = FALSE)
+
+
+
+},pagesize = chunksize)
+
+
+close(output)
+
+
+
+
+dataFile <-stream_in(file("~/out.json"),handler = function(df){
+
+  cat("got data frame with",apply(df['overall'],2,sd),"standard deviation ")
+  cat("",apply(df['overall'],2,mean),"mean\n")
+  df <- mutate(df, revmean = apply(df['overall'],2,mean)) #2 for col\
+  df<-subset(na.omit(df),select=-c(asin,helpful,overall))
+  stream_out(na.omit(head(df,1)), output2, verbose = FALSE)
+
+
+
+
+},pagesize = chunksize)
+
+close(output2)
+
+dataFile <-stream_in(file("~/out2.json"),handler = function(df){
+
+
+  df <- mutate(df, ovrevmean = apply(df['revmean'],2,mean)) #2 for col\
+  df<-subset(na.omit(df),select=-c(revmean))
+  stream_out(head(df,1), output3, verbose = FALSE)
+
+
+
+
+},pagesize = chunksize)
+close(output3)
+
+
